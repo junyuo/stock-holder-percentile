@@ -1,0 +1,46 @@
+name: 更新 TDCC 集保資料
+
+on:
+  schedule:
+    # 每週六 08:30（Asia/Taipei）；GitHub Actions cron 使用 UTC。
+    - cron: '30 0 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tdcc-data-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: 下載、轉換並驗證官方資料
+        env:
+          TZ: Asia/Taipei
+        run: |
+          node scripts/update-data.mjs
+          node scripts/validate-data.mjs
+
+      - name: 僅在資料內容改變時提交
+        run: |
+          if git diff --quiet -- public/data; then
+            echo "TDCC 資料內容未改變，不建立提交。"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data
+          git commit -m "data: 更新 TDCC 集保資料"
+          git push

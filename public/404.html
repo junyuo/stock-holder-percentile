@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head><meta charset="UTF-8" /><title>正在返回集保持股 PR 分析</title></head>
+  <body>
+    <script>
+      var segments = location.pathname.split('/').filter(Boolean)
+      var base = segments.length ? '/' + segments[0] + '/' : '/'
+      sessionStorage.setItem('spa-redirect', location.pathname + location.search + location.hash)
+      location.replace(base)
+    </script>
+    <p>正在返回首頁…</p>
+  </body>
+</html>
