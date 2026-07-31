@@ -15,9 +15,7 @@ export function PercentileGauge({ value, lower, upper }: Props) {
   ]
 
   return (
-    <section className="panel gauge-panel" aria-labelledby="gauge-title">
-      <div className="section-kicker">你的統計位置</div>
-      <h2 id="gauge-title">持股 PR</h2>
+    <div className="summary-gauge" role="img" aria-label={`持股 PR ${Math.round(displayValue)}`}>
       <div className="gauge-wrap" aria-label={`PR ${Math.round(displayValue)}`}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
@@ -31,8 +29,8 @@ export function PercentileGauge({ value, lower, upper }: Props) {
               stroke="none"
               isAnimationActive
             >
-              <Cell fill="#41d5ae" />
-              <Cell fill="#dce8e7" />
+              <Cell fill="#54C4AA" />
+              <Cell fill="#294256" />
             </Pie>
           </PieChart>
         </ResponsiveContainer>
@@ -46,6 +44,6 @@ export function PercentileGauge({ value, lower, upper }: Props) {
       ) : (
         <p className="gauge-copy">約超過 {formatPercent(value, 0)}% 的集保股東</p>
       )}
-    </section>
+    </div>
   )
 }

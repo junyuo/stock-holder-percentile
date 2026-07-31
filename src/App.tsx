@@ -173,57 +173,70 @@ function App() {
 
       <main>
         <section className="hero">
-          <div className="eyebrow">TAIWAN HOLDER DISTRIBUTION</div>
-          <h1>你持有的張數，<br /><span>落在股東分布的哪裡？</span></h1>
-          <p>輸入股票代號與持有張數，用官方集保級距資料了解你的統計位置。不是名次，也不是投資建議。</p>
-
-          <form className="search-card" onSubmit={handleSubmit} noValidate>
-            <label>
-              <span>股票代號</span>
-              <input
-                value={stockCode}
-                onChange={(event) => setStockCode(event.target.value.toUpperCase())}
-                placeholder="例如 0050"
-                list="stock-suggestions"
-                autoComplete="off"
-                inputMode="text"
-                maxLength={12}
-              />
-              <datalist id="stock-suggestions">
-                {suggestions.map((stock) => (
-                  <option value={stock.stockCode} key={stock.stockCode}>{stock.stockName ?? '名稱未提供'}</option>
-                ))}
-              </datalist>
-              <small>{selectedStock?.stockName ?? (indexLoading ? '正在載入股票清單…' : '輸入代號後顯示名稱')}</small>
-            </label>
-            <label>
-              <span>持有張數</span>
-              <div className="input-suffix">
-                <input
-                  value={lots}
-                  onChange={(event) => setLots(event.target.value)}
-                  placeholder="例如 50 或 0.5"
-                  inputMode="decimal"
-                  autoComplete="off"
-                />
-                <span>張</span>
-              </div>
-              <small>1 張 = 1,000 股，最小 0.001 張</small>
-            </label>
-            <button className="primary-button" type="submit" disabled={loading || indexLoading}>
-              {loading ? '分析中…' : '開始分析'}
-            </button>
-            <button className="example-button" type="button" onClick={useExample} disabled={loading || indexLoading}>
-              試試 0050／50 張
-            </button>
-          </form>
-
-          {error && (
-            <div className="error-banner" role="alert">
-              <strong>{error.title}</strong>
-              <span>{error.action}</span>
+          <div className="hero-copy">
+            <div className="eyebrow">TAIWAN HOLDER DISTRIBUTION</div>
+            <h1>看懂你的持股，<span>落在股東分布的哪裡。</span></h1>
+            <p>用 TDCC 官方集保級距資料，快速理解你的持股位置、合理 PR 範圍與股東結構。</p>
+            <div className="hero-note">
+              <span>區間統計</span>
+              <span>每週更新</span>
+              <span>不構成投資建議</span>
             </div>
-          )}
+          </div>
+
+          <div className="hero-action">
+            <form className="search-card" onSubmit={handleSubmit} noValidate>
+              <div className="search-card-heading">
+                <div className="section-kicker">開始分析</div>
+                <h2>輸入你的持股資料</h2>
+              </div>
+              <label>
+                <span>股票代號</span>
+                <input
+                  value={stockCode}
+                  onChange={(event) => setStockCode(event.target.value.toUpperCase())}
+                  placeholder="例如 0050"
+                  list="stock-suggestions"
+                  autoComplete="off"
+                  inputMode="text"
+                  maxLength={12}
+                />
+                <datalist id="stock-suggestions">
+                  {suggestions.map((stock) => (
+                    <option value={stock.stockCode} key={stock.stockCode}>{stock.stockName ?? '名稱未提供'}</option>
+                  ))}
+                </datalist>
+                <small>{selectedStock?.stockName ?? (indexLoading ? '正在載入股票清單…' : '輸入代號後顯示名稱')}</small>
+              </label>
+              <label>
+                <span>持有張數</span>
+                <div className="input-suffix">
+                  <input
+                    value={lots}
+                    onChange={(event) => setLots(event.target.value)}
+                    placeholder="例如 50 或 0.5"
+                    inputMode="decimal"
+                    autoComplete="off"
+                  />
+                  <span>張</span>
+                </div>
+                <small>1 張 = 1,000 股，最小 0.001 張</small>
+              </label>
+              <button className="primary-button" type="submit" disabled={loading || indexLoading}>
+                {loading ? '分析中…' : '查看我的統計位置'}
+              </button>
+              <button className="example-button" type="button" onClick={useExample} disabled={loading || indexLoading}>
+                試試範例：0050／50 張
+              </button>
+            </form>
+
+            {error && (
+              <div className="error-banner" role="alert">
+                <strong>{error.title}</strong>
+                <span>{error.action}</span>
+              </div>
+            )}
+          </div>
         </section>
 
         {analysis && dataRows && (
@@ -236,52 +249,57 @@ function App() {
                 </div>
                 <div className="data-date">資料日期 {formatDataDate(analysis.data.dataDate)}</div>
               </div>
-              <div className="summary-message">
-                {displayPercentile == null ? (
-                  <>
-                    <div className="summary-kicker">最高持股級距 · 無上限</div>
-                    <h3>你的持股量位於 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}</h3>
-                    <p>此級距沒有精確上限，因此不顯示單點推估。</p>
-                  </>
-                ) : (
-                  <>
-                    <div className="summary-kicker">模型推估</div>
-                    <h3>你的持股量推估高於 <em>{Math.round(displayPercentile)}%</em> 的集保股東</h3>
-                    <p>合理估計範圍為 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}</p>
-                  </>
-                )}
+              <div className="summary-primary">
+                <Suspense fallback={<div className="summary-gauge-loading">正在準備 PR 圖表…</div>}>
+                  <PercentileGauge
+                    value={analysis.result.estimatedPercentile}
+                    lower={analysis.result.lowerPercentile}
+                    upper={analysis.result.upperPercentile}
+                  />
+                </Suspense>
+                <div className="summary-message">
+                  {displayPercentile == null ? (
+                    <>
+                      <div className="summary-kicker">最高持股級距 · 無上限</div>
+                      <h3>你的持股量位於 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}</h3>
+                      <p>此級距沒有精確上限，因此不顯示單點推估。</p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="summary-kicker">模型推估</div>
+                      <h3>你的持股量推估高於 <em>{Math.round(displayPercentile)}%</em> 的集保股東</h3>
+                      <p>合理估計範圍為 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}</p>
+                    </>
+                  )}
+                </div>
+                <dl className="summary-stats">
+                  <div><dt>持有張數</dt><dd>{formatNumber(analysis.lots, 3)} 張</dd></div>
+                  <div><dt>換算股數</dt><dd>{formatNumber(analysis.result.userShares)} 股</dd></div>
+                  <div><dt>所在級距</dt><dd>{analysis.result.bucket.label}</dd></div>
+                  <div><dt>級距股東</dt><dd>{formatNumber(analysis.result.row.holderCount)} 人</dd></div>
+                </dl>
               </div>
-              <dl className="summary-stats">
-                <div><dt>持有張數</dt><dd>{formatNumber(analysis.lots, 3)} 張</dd></div>
-                <div><dt>換算股數</dt><dd>{formatNumber(analysis.result.userShares)} 股</dd></div>
-                <div><dt>所在級距</dt><dd>{analysis.result.bucket.label}</dd></div>
-                <div><dt>級距股東</dt><dd>{formatNumber(analysis.result.row.holderCount)} 人</dd></div>
-              </dl>
             </div>
 
-            <div className="result-grid">
-              <Suspense fallback={<div className="panel chart-loading">正在準備 PR 圖表…</div>}>
-                <PercentileGauge
-                  value={analysis.result.estimatedPercentile}
-                  lower={analysis.result.lowerPercentile}
-                  upper={analysis.result.upperPercentile}
-                />
-              </Suspense>
-              <section className="panel insight-panel" aria-labelledby="insight-title">
-                <div className="section-kicker">根據本期統計</div>
-                <h2 id="insight-title">白話解讀</h2>
-                <ol>
-                  <li>你目前位於 <strong>{analysis.result.bucket.label}</strong> 級距。</li>
-                  <li>此級距共有 <strong>{formatNumber(analysis.result.row.holderCount)}</strong> 位集保股東，占全部股東 {formatPercent((analysis.result.row.holderCount / analysis.result.totalHolders) * 100)}%。</li>
-                  {displayPercentile == null ? (
-                    <li>最高級距沒有上限，只能確定合理範圍為 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}。</li>
-                  ) : (
-                    <li>以級距內均勻分布模型推估，你的持股量約高於 {formatPercent(displayPercentile, 0)}% 的集保股東。</li>
-                  )}
-                  <li>人數占比與持股占比是不同概念；圖表可切換查看兩種結構。</li>
-                </ol>
-              </section>
-            </div>
+            <section className="panel insight-panel" aria-labelledby="insight-title">
+              <div className="section-heading">
+                <div>
+                  <div className="section-kicker">根據本期統計</div>
+                  <h2 id="insight-title">白話解讀</h2>
+                </div>
+                <span className="scale-note">四個重點</span>
+              </div>
+              <ol>
+                <li><span className="insight-content">你目前位於 <strong>{analysis.result.bucket.label}</strong> 級距。</span></li>
+                <li><span className="insight-content">此級距共有 <strong>{formatNumber(analysis.result.row.holderCount)}</strong> 位集保股東，占全部股東 {formatPercent((analysis.result.row.holderCount / analysis.result.totalHolders) * 100)}%。</span></li>
+                {displayPercentile == null ? (
+                  <li><span className="insight-content">最高級距沒有上限，只能確定合理範圍為 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}。</span></li>
+                ) : (
+                  <li><span className="insight-content">以級距內均勻分布模型推估，你的持股量約高於 <strong>{formatPercent(displayPercentile, 0)}%</strong> 的集保股東。</span></li>
+                )}
+                <li><span className="insight-content">人數占比與持股占比是不同概念；圖表可切換查看兩種結構。</span></li>
+              </ol>
+            </section>
 
             <HolderPyramid rows={dataRows} activeLevel={analysis.result.bucket.level} />
             <Suspense fallback={<div className="panel chart-loading">正在準備分布圖表…</div>}>
