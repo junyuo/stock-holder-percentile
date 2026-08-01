@@ -58,7 +58,7 @@ export function DistributionChart({ rows, activeLevel }: Props) {
   const useLogScale = metric !== 'custody'
   const data = useMemo<ChartDatum[]>(
     () =>
-      rows.map((row) => {
+      [...rows].sort((a, b) => b.holdingLevel - a.holdingLevel).map((row) => {
         const bucket = HOLDING_BUCKETS[row.holdingLevel - 1]
         const value =
           metric === 'holders'
@@ -80,7 +80,7 @@ export function DistributionChart({ rows, activeLevel }: Props) {
     <section className="panel distribution-panel" aria-labelledby="distribution-title">
       <div className="section-heading chart-heading">
         <div>
-          <div className="section-kicker">15 個持股級距</div>
+          <div className="section-kicker">由下而上，持股數由少至多</div>
           <h2 id="distribution-title">分布結構</h2>
         </div>
         {useLogScale && <span className="scale-note">對數刻度</span>}
