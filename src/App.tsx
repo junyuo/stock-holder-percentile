@@ -1,5 +1,6 @@
 import { FormEvent, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { HolderPyramid } from './components/HolderPyramid'
+import { PercentileRange } from './components/PercentileRange'
 import { DataError, loadIndexData, loadStockData } from './lib/data'
 import { formatDataDate, formatNumber, formatPercent, formatTaipeiTime } from './lib/format'
 import { calculatePercentile, lotsToShares, PercentileError } from './lib/percentile'
@@ -262,15 +263,23 @@ function App() {
                     <>
                       <div className="summary-kicker">最高持股級距 · 無上限</div>
                       <h3>你的持股量位於 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}</h3>
-                      <p>此級距沒有精確上限，因此不顯示單點推估。</p>
                     </>
                   ) : (
                     <>
                       <div className="summary-kicker">模型推估</div>
                       <h3>你的持股量推估高於 <em>{Math.round(displayPercentile)}%</em> 的集保股東</h3>
-                      <p>合理估計範圍為 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}</p>
                     </>
                   )}
+                  <PercentileRange
+                    value={analysis.result.estimatedPercentile}
+                    lower={analysis.result.lowerPercentile}
+                    upper={analysis.result.upperPercentile}
+                  />
+                  <p>
+                    {displayPercentile == null
+                      ? '此級距沒有精確上限，因此不顯示單點推估。'
+                      : 'PR 為持股級距內的模型估計，並非個別股東精確排名。'}
+                  </p>
                 </div>
                 <dl className="summary-stats">
                   <div><dt>持有張數</dt><dd>{formatNumber(analysis.lots, 3)} 張</dd></div>
