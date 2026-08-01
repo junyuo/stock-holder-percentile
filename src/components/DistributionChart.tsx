@@ -101,7 +101,7 @@ export function DistributionChart({ rows, activeLevel }: Props) {
       <div className="chart-wrap">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 6" horizontal={false} stroke="#E4E5EE" />
+            <CartesianGrid strokeDasharray="3 6" horizontal={false} stroke="#E7E2D8" />
             <XAxis
               type="number"
               scale={useLogScale ? 'log' : 'auto'}
@@ -121,10 +121,10 @@ export function DistributionChart({ rows, activeLevel }: Props) {
               width={132}
               fontSize={10}
             />
-            <Tooltip content={<ChartTooltip metric={metric} />} cursor={{ fill: '#F0F0F8' }} />
+            <Tooltip content={<ChartTooltip metric={metric} />} cursor={{ fill: '#F3ECDD' }} />
             <Bar dataKey="plottedValue" radius={[0, 6, 6, 0]}>
               {data.map((item) => (
-                <Cell fill={item.level === activeLevel ? '#5969D8' : '#A4ACBD'} key={item.level} />
+                <Cell fill={item.level === activeLevel ? '#A77E2E' : '#A7A49D'} key={item.level} />
               ))}
             </Bar>
           </BarChart>
