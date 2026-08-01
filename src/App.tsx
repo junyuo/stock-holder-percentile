@@ -241,7 +241,7 @@ function App() {
 
         {analysis && dataRows && (
           <section id="analysis-result" className="results" aria-live="polite">
-            <div className="result-summary panel-dark">
+            <div className="result-summary panel">
               <div className="summary-topline">
                 <div>
                   <span className="stock-code">{analysis.data.stockCode}</span>
@@ -275,7 +275,7 @@ function App() {
                 <dl className="summary-stats">
                   <div><dt>持有張數</dt><dd>{formatNumber(analysis.lots, 3)} 張</dd></div>
                   <div><dt>換算股數</dt><dd>{formatNumber(analysis.result.userShares)} 股</dd></div>
-                  <div><dt>所在級距</dt><dd>{analysis.result.bucket.label}</dd></div>
+                  <div className="summary-stat-wide"><dt>所在級距</dt><dd>{analysis.result.bucket.label}</dd></div>
                   <div><dt>級距股東</dt><dd>{formatNumber(analysis.result.row.holderCount)} 人</dd></div>
                 </dl>
               </div>

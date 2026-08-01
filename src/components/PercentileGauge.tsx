@@ -29,8 +29,8 @@ export function PercentileGauge({ value, lower, upper }: Props) {
               stroke="none"
               isAnimationActive
             >
-              <Cell fill="#54C4AA" />
-              <Cell fill="#294256" />
+              <Cell fill="#6FD2BB" />
+              <Cell fill="#2B4860" />
             </Pie>
           </PieChart>
         </ResponsiveContainer>
