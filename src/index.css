@@ -136,14 +136,36 @@ strong, dd, .stock-code, .gauge-center { font-variant-numeric: tabular-nums; }
 .pyramid-value span { color: #777973; font-size: 10px; }
 
 .chart-heading { margin-bottom: 17px; }
-.metric-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px; background: #f0ede7; }
-.metric-tabs button { border: 0; border-radius: 9px; padding: 8px 12px; background: transparent; color: #5e625f; cursor: pointer; font-size: 11px; font-weight: 750; }
-.metric-tabs button.is-active { background: var(--surface); color: var(--charcoal); box-shadow: 0 3px 10px rgba(37, 40, 42, .08); }
-.chart-wrap { height: 560px; margin-top: 18px; }
 .chart-loading { min-height: 180px; display: grid; place-items: center; color: var(--muted); font-size: 12px; }
-.chart-tooltip { padding: 11px 13px; display: grid; gap: 5px; border: 1px solid var(--line); border-radius: 10px; background: rgba(255, 254, 251, .98); box-shadow: 0 10px 30px rgba(37, 40, 42, .12); font-size: 11px; }
-.chart-tooltip span { color: var(--muted); }
-.chart-axis-note { margin: 7px 0 0; color: #7a7c77; font-size: 10px; }
+.distribution-legend, .distribution-row { display: grid; grid-template-columns: minmax(0, 1fr) 176px minmax(0, 1fr); gap: 12px; }
+.distribution-legend { padding: 0 10px 10px; color: #747670; font-size: 10px; font-weight: 750; text-align: center; }
+.distribution-legend-holders { text-align: right; }
+.distribution-legend-custody { text-align: left; }
+.distribution-legend-holders::after, .distribution-legend-custody::before { content: ""; width: 8px; height: 8px; display: inline-block; border-radius: 2px; }
+.distribution-legend-holders::after { margin-left: 7px; background: #77756f; }
+.distribution-legend-custody::before { margin-right: 7px; background: #b6b1a7; }
+.distribution-list { display: grid; gap: 5px; }
+.distribution-row { min-width: 0; min-height: 46px; padding: 7px 10px; align-items: center; border-radius: 10px; outline: none; }
+.distribution-row.is-active { background: var(--accent-soft); box-shadow: inset 3px 0 0 #a77e2e; }
+.distribution-row:focus-visible { box-shadow: 0 0 0 3px var(--accent); }
+.distribution-row.is-active:focus-visible { box-shadow: inset 3px 0 0 #a77e2e, 0 0 0 3px var(--accent); }
+.distribution-side { min-width: 0; display: grid; gap: 8px; align-items: center; }
+.distribution-holders { grid-template-columns: minmax(112px, auto) minmax(44px, 1fr); grid-template-areas: "value track"; }
+.distribution-custody { grid-template-columns: minmax(44px, 1fr) minmax(112px, auto); grid-template-areas: "track value"; }
+.distribution-mobile-label { display: none; grid-area: label; color: #747670; font-size: 9px; font-weight: 750; }
+.distribution-value { min-width: 0; grid-area: value; display: grid; gap: 1px; }
+.distribution-value strong { color: var(--charcoal); font-size: 11px; font-weight: 850; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.distribution-value span { color: #777973; font-size: 9px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.distribution-holders .distribution-value { text-align: right; }
+.distribution-track { min-width: 0; height: 9px; grid-area: track; display: flex; overflow: hidden; border-radius: 999px; background: #ece8df; }
+.distribution-holders .distribution-track { justify-content: flex-end; }
+.distribution-bar { height: 100%; border-radius: 999px; background: #77756f; }
+.distribution-custody .distribution-bar { background: #b6b1a7; }
+.distribution-row.is-active .distribution-holders .distribution-bar { background: #8b671f; }
+.distribution-row.is-active .distribution-custody .distribution-bar { background: #c6a15b; }
+.distribution-bucket { min-width: 0; display: grid; justify-items: center; gap: 3px; color: #565a58; font-size: 10px; font-weight: 750; text-align: center; overflow-wrap: anywhere; }
+.distribution-bucket strong { padding: 3px 6px; border-radius: 999px; background: var(--charcoal); color: #fff; font-size: 8px; white-space: nowrap; }
+.chart-axis-note { margin: 13px 0 0; color: #7a7c77; font-size: 10px; line-height: 1.6; }
 
 .method-panel { padding: 27px; background: #f0ede7; }
 .method-grid { margin-top: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
@@ -197,9 +219,16 @@ footer > p { max-width: 930px; margin: 13px 0; color: var(--muted); font-size: 1
   .pyramid-row { grid-template-columns: minmax(0, 1fr) 106px; gap: 7px 12px; padding: 8px 6px; }
   .pyramid-track { grid-row: 2; grid-column: 1 / -1; justify-content: flex-start; }
   .pyramid-value { grid-template-columns: 1fr 44px; }
-  .metric-tabs { width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); }
-  .metric-tabs button { min-height: 40px; padding: 8px 3px; font-size: 10px; }
-  .chart-wrap { height: 520px; margin-left: -8px; }
+  .distribution-legend { display: none; }
+  .distribution-list { gap: 8px; }
+  .distribution-row { min-height: 0; padding: 11px; grid-template-columns: 1fr; grid-template-areas: "bucket" "holders" "custody"; gap: 9px; background: #f7f5f0; }
+  .distribution-holders { grid-area: holders; }
+  .distribution-custody { grid-area: custody; }
+  .distribution-bucket { grid-area: bucket; display: flex; justify-content: space-between; align-items: center; text-align: left; }
+  .distribution-side, .distribution-holders, .distribution-custody { grid-template-columns: 64px minmax(36px, 1fr) minmax(96px, auto); grid-template-areas: "label track value"; }
+  .distribution-mobile-label { display: block; }
+  .distribution-holders .distribution-track { justify-content: flex-start; }
+  .distribution-holders .distribution-value, .distribution-custody .distribution-value { text-align: right; }
   .method-panel { padding: 22px 20px; border-radius: 19px; }
 }
 
@@ -214,7 +243,8 @@ footer > p { max-width: 930px; margin: 13px 0; color: var(--muted); font-size: 1
   .section-heading { align-items: center; }
   .scale-note { white-space: nowrap; }
   .pyramid-label { font-size: 10px; }
-  .chart-wrap { height: 500px; }
+  .distribution-row { padding: 10px 9px; }
+  .distribution-side, .distribution-holders, .distribution-custody { grid-template-columns: 58px minmax(28px, 1fr) minmax(91px, auto); gap: 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,136 +1,110 @@
-import { useMemo, useState } from 'react'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts'
+import { useMemo } from 'react'
 import { formatNumber, formatPercent } from '../lib/format'
 import { HOLDING_BUCKETS } from '../lib/percentile'
 import type { HoldingRow } from '../types'
-
-type Metric = 'holders' | 'shares' | 'custody'
-
-const metricLabel: Record<Metric, string> = {
-  holders: '股東人數',
-  shares: '持有股數',
-  custody: '集保庫存比例',
-}
 
 interface Props {
   rows: HoldingRow[]
   activeLevel: number
 }
 
-interface TooltipProps {
-  active?: boolean
-  payload?: Array<{ payload: ChartDatum }>
-  metric: Metric
-}
-
-interface ChartDatum {
-  level: number
+interface DistributionDatum extends HoldingRow {
   label: string
-  value: number
-  plottedValue: number
+  holderPercentage: number
+  holderWidth: string
+  custodyWidth: string
 }
 
-function ChartTooltip({ active, payload, metric }: TooltipProps) {
-  const datum = payload?.[0]?.payload
-  if (!active || !datum) return null
-  return (
-    <div className="chart-tooltip">
-      <strong>{datum.label}</strong>
-      <span>
-        {metricLabel[metric]}：
-        {metric === 'custody' ? `${formatPercent(datum.value, 2)}%` : formatNumber(datum.value)}
-      </span>
-    </div>
-  )
+function barWidth(value: number, maximum: number): string {
+  if (value <= 0 || maximum <= 0) return '0'
+  return `max(1px, ${(value / maximum) * 100}%)`
 }
 
 export function DistributionChart({ rows, activeLevel }: Props) {
-  const [metric, setMetric] = useState<Metric>('holders')
-  const useLogScale = metric !== 'custody'
-  const data = useMemo<ChartDatum[]>(
-    () =>
-      [...rows].sort((a, b) => b.holdingLevel - a.holdingLevel).map((row) => {
-        const bucket = HOLDING_BUCKETS[row.holdingLevel - 1]
-        const value =
-          metric === 'holders'
-            ? row.holderCount
-            : metric === 'shares'
-              ? row.shareCount
-              : row.custodyPercentage
-        return {
-          level: row.holdingLevel,
-          label: bucket.label,
-          value,
-          plottedValue: useLogScale ? Math.max(1, value) : value,
-        }
-      }),
-    [metric, rows, useLogScale],
-  )
+  const data = useMemo<DistributionDatum[]>(() => {
+    const totalHolders = rows.reduce((sum, row) => sum + row.holderCount, 0)
+    const percentages = rows.map((row) => ({
+      row,
+      holderPercentage: totalHolders > 0 ? (row.holderCount / totalHolders) * 100 : 0,
+    }))
+    const maximum = Math.max(
+      0,
+      ...percentages.flatMap(({ row, holderPercentage }) => [holderPercentage, row.custodyPercentage]),
+    )
+
+    return percentages
+      .sort((a, b) => b.row.holdingLevel - a.row.holdingLevel)
+      .map(({ row, holderPercentage }) => ({
+        ...row,
+        label: HOLDING_BUCKETS[row.holdingLevel - 1].label,
+        holderPercentage,
+        holderWidth: barWidth(holderPercentage, maximum),
+        custodyWidth: barWidth(row.custodyPercentage, maximum),
+      }))
+  }, [rows])
 
   return (
     <section className="panel distribution-panel" aria-labelledby="distribution-title">
       <div className="section-heading chart-heading">
         <div>
           <div className="section-kicker">由下而上，持股數由少至多</div>
-          <h2 id="distribution-title">分布結構</h2>
+          <h2 id="distribution-title">股東與持股結構</h2>
         </div>
-        {useLogScale && <span className="scale-note">對數刻度</span>}
+        <span className="scale-note">共用線性刻度</span>
       </div>
-      <div className="metric-tabs" role="group" aria-label="切換分布指標">
-        {(Object.keys(metricLabel) as Metric[]).map((key) => (
-          <button
-            type="button"
-            className={metric === key ? 'is-active' : ''}
-            onClick={() => setMetric(key)}
-            aria-pressed={metric === key}
-            key={key}
-          >
-            {metricLabel[key]}
-          </button>
-        ))}
+
+      <div className="distribution-legend" aria-hidden="true">
+        <span className="distribution-legend-holders">股東人數占比</span>
+        <span>持股級距</span>
+        <span className="distribution-legend-custody">集保庫存占比</span>
       </div>
-      <div className="chart-wrap">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 6" horizontal={false} stroke="#E7E2D8" />
-            <XAxis
-              type="number"
-              scale={useLogScale ? 'log' : 'auto'}
-              domain={useLogScale ? [1, 'auto'] : [0, 'auto']}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value: number) =>
-                metric === 'custody' ? `${value}%` : new Intl.NumberFormat('zh-TW', { notation: 'compact' }).format(value)
-              }
-              fontSize={11}
-            />
-            <YAxis
-              type="category"
-              dataKey="label"
-              tickLine={false}
-              axisLine={false}
-              width={132}
-              fontSize={10}
-            />
-            <Tooltip content={<ChartTooltip metric={metric} />} cursor={{ fill: '#F3ECDD' }} />
-            <Bar dataKey="plottedValue" radius={[0, 6, 6, 0]}>
-              {data.map((item) => (
-                <Cell fill={item.level === activeLevel ? '#A77E2E' : '#A7A49D'} key={item.level} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+
+      <div className="distribution-list">
+        {data.map((item) => {
+          const active = item.holdingLevel === activeLevel
+          const accessibleLabel = `${item.label}，股東人數 ${formatNumber(item.holderCount)} 人，占 ${formatPercent(item.holderPercentage)}%；持有股數 ${formatNumber(item.shareCount)} 股，占集保庫存 ${formatPercent(item.custodyPercentage, 2)}%${active ? '，你在這裡' : ''}`
+
+          return (
+            <article
+              className={`distribution-row ${active ? 'is-active' : ''}`}
+              aria-label={accessibleLabel}
+              tabIndex={0}
+              key={item.holdingLevel}
+            >
+              <div className="distribution-side distribution-holders">
+                <span className="distribution-mobile-label">股東人數</span>
+                <div className="distribution-value">
+                  <strong>{formatPercent(item.holderPercentage)}%</strong>
+                  <span>{formatNumber(item.holderCount)} 人</span>
+                </div>
+                <div className="distribution-track" aria-hidden="true">
+                  <span className="distribution-bar" style={{ width: item.holderWidth }} />
+                </div>
+              </div>
+
+              <div className="distribution-bucket">
+                <span>{item.label}</span>
+                {active && <strong>你在這裡</strong>}
+              </div>
+
+              <div className="distribution-side distribution-custody">
+                <span className="distribution-mobile-label">持股占比</span>
+                <div className="distribution-track" aria-hidden="true">
+                  <span className="distribution-bar" style={{ width: item.custodyWidth }} />
+                </div>
+                <div className="distribution-value">
+                  <strong>{formatPercent(item.custodyPercentage, 2)}%</strong>
+                  <span>{formatNumber(item.shareCount)} 股</span>
+                </div>
+              </div>
+            </article>
+          )
+        })}
       </div>
-      <p className="chart-axis-note">每列為一個 TDCC 持股級距；第 15 級為 1,000,001 股以上。</p>
+
+      <p className="chart-axis-note">
+        左右長條使用相同線性刻度，便於比較人數與持股集中度；第 15 級為 1,000,001 股以上。
+      </p>
     </section>
   )
 }
