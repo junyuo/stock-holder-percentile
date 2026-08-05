@@ -7,6 +7,12 @@ interface Props {
   activeLevel: number
 }
 
+function formatHolderPercentage(value: number): string {
+  if (value === 0) return '0.0%'
+  if (value < 0.001) return '<0.001%'
+  return `${formatPercent(value, value < 0.1 ? 3 : 1)}%`
+}
+
 export function HolderPyramid({ rows, activeLevel }: Props) {
   const total = rows.reduce((sum, row) => sum + row.holderCount, 0)
   const maxLog = Math.max(...rows.map((row) => Math.log10(row.holderCount + 1)), 1)
@@ -37,7 +43,7 @@ export function HolderPyramid({ rows, activeLevel }: Props) {
               </div>
               <div className="pyramid-value">
                 <strong>{formatNumber(row.holderCount)}</strong>
-                <span>{formatPercent((row.holderCount / total) * 100)}%</span>
+                <span>{formatHolderPercentage((row.holderCount / total) * 100)}</span>
               </div>
             </div>
           )
