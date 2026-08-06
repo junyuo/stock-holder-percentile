@@ -20,6 +20,12 @@ function barWidth(value: number, maximum: number): string {
   return `max(1px, ${(value / maximum) * 100}%)`
 }
 
+function formatHolderPercentage(value: number): string {
+  if (value === 0) return '0.0%'
+  if (value < 0.001) return '<0.001%'
+  return `${formatPercent(value, value < 0.1 ? 3 : 1)}%`
+}
+
 export function DistributionChart({ rows, activeLevel }: Props) {
   const data = useMemo<DistributionDatum[]>(() => {
     const totalHolders = rows.reduce((sum, row) => sum + row.holderCount, 0)
@@ -62,7 +68,8 @@ export function DistributionChart({ rows, activeLevel }: Props) {
       <div className="distribution-list">
         {data.map((item) => {
           const active = item.holdingLevel === activeLevel
-          const accessibleLabel = `${item.label}，股東人數 ${formatNumber(item.holderCount)} 人，占 ${formatPercent(item.holderPercentage)}%；持有股數 ${formatNumber(item.shareCount)} 股，占集保庫存 ${formatPercent(item.custodyPercentage, 2)}%${active ? '，你在這裡' : ''}`
+          const holderPercentageLabel = formatHolderPercentage(item.holderPercentage)
+          const accessibleLabel = `${item.label}，股東人數 ${formatNumber(item.holderCount)} 人，占 ${holderPercentageLabel}；持有股數 ${formatNumber(item.shareCount)} 股，占集保庫存 ${formatPercent(item.custodyPercentage, 2)}%${active ? '，你在這裡' : ''}`
 
           return (
             <article
@@ -74,7 +81,7 @@ export function DistributionChart({ rows, activeLevel }: Props) {
               <div className="distribution-side distribution-holders">
                 <span className="distribution-mobile-label">股東人數</span>
                 <div className="distribution-value">
-                  <strong>{formatPercent(item.holderPercentage)}%</strong>
+                  <strong>{holderPercentageLabel}</strong>
                   <span>{formatNumber(item.holderCount)} 人</span>
                 </div>
                 <div className="distribution-track" aria-hidden="true">
