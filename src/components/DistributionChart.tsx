@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { formatNumber, formatPercent } from '../lib/format'
+import { formatNumber, formatPercent, formatHolderPercentage } from '../lib/format'
 import { HOLDING_BUCKETS } from '../lib/percentile'
 import type { HoldingRow } from '../types'
 
@@ -18,12 +18,6 @@ interface DistributionDatum extends HoldingRow {
 function barWidth(value: number, maximum: number): string {
   if (value <= 0 || maximum <= 0) return '0'
   return `max(1px, ${(value / maximum) * 100}%)`
-}
-
-function formatHolderPercentage(value: number): string {
-  if (value === 0) return '0.0%'
-  if (value < 0.001) return '<0.001%'
-  return `${formatPercent(value, value < 0.1 ? 3 : 1)}%`
 }
 
 export function DistributionChart({ rows, activeLevel }: Props) {

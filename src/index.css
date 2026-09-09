@@ -271,6 +271,42 @@ footer > p { max-width: 930px; margin: 13px 0; color: var(--muted); font-size: 1
   .distribution-side, .distribution-holders, .distribution-custody { grid-template-columns: 58px minmax(28px, 1fr) minmax(103px, auto); gap: 6px; }
 }
 
+.panel-intro { color: var(--muted); font-size: 14px; line-height: 1.7; margin: 12px 0 20px; }
+.summary-message .top-range-copy { margin: 12px 0 8px; color: var(--accent); font-weight: 700; }
+.gauge-center strong { font-size: 24px; }
+.pr-range-labels strong { white-space: normal; overflow-wrap: anywhere; }
+.threshold-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+.threshold-table th, .threshold-table td { padding: 16px 12px; border-bottom: 1px solid var(--line); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.threshold-table th { text-align: left; }
+.threshold-table th:first-child { width: 20%; }
+.threshold-table td { text-align: right; }
+.threshold-table thead { color: var(--muted); font-size: 12px; }
+.threshold-table thead th:not(:first-child) { text-align: right; }
+.threshold-table .is-reached { background: var(--accent-soft); }
+.threshold-table td:last-child { font-size: 12px; color: #66583d; }
+.share-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .9fr); gap: 30px; align-items: center; }
+.share-panel > div { min-width: 0; }
+.share-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.share-actions button { min-height: 46px; padding: 10px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--charcoal); color: var(--surface); cursor: pointer; font-size: 13px; }
+.share-actions button:disabled { opacity: .6; cursor: wait; }
+.share-feedback { min-height: 22px; color: var(--accent); font-size: 13px; }
+.share-fallback { display: grid; gap: 8px; font-size: 13px; }
+.share-fallback input { min-width: 0; width: 100%; padding: 10px; border: 1px solid var(--line); }
+.share-preview { padding: 26px; display: grid; gap: 12px; border-radius: 15px; background: var(--canvas); border-left: 4px solid var(--accent-bright); overflow-wrap: anywhere; }
+.share-preview strong { font-size: clamp(22px, 2.4vw, 30px); line-height: 1.4; color: var(--accent); }
+.share-preview span, .share-preview small { font-size: 13px; line-height: 1.5; }
+@media (max-width: 900px) {
+  .share-panel { grid-template-columns: 1fr; gap: 15px; }
+}
+@media (max-width: 640px) {
+  .threshold-table { font-size: 12px; }
+  .threshold-table th, .threshold-table td { padding: 14px 5px; }
+  .threshold-table td:last-child { font-size: 11px; }
+  .share-preview { padding: 18px; }
+  .share-actions button { flex: 1 1 130px; }
+  .gauge-center strong { font-size: 20px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }

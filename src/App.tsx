@@ -1,8 +1,10 @@
 import { FormEvent, lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { HolderPyramid } from './components/HolderPyramid'
-import { PercentileRange } from './components/PercentileRange'
+import { ResultHeadline } from './components/ResultHeadline'
+import { HoldingThresholds } from './components/HoldingThresholds'
+import { ShareResult } from './components/ShareResult'
 import { DataError, loadIndexData, loadStockData } from './lib/data'
-import { formatDataDate, formatNumber, formatPercent, formatTaipeiTime } from './lib/format'
+import { formatDataDate, formatNumber, formatPr, formatHolderPercentage, formatTaipeiTime } from './lib/format'
 import { calculatePercentile, lotsToShares, PercentileError } from './lib/percentile'
 import type { Manifest, PercentileResult, StockData, StockSummary } from './types'
 
@@ -258,29 +260,7 @@ function App() {
                     upper={analysis.result.upperPercentile}
                   />
                 </Suspense>
-                <div className="summary-message">
-                  {displayPercentile == null ? (
-                    <>
-                      <div className="summary-kicker">最高持股級距 · 無上限</div>
-                      <h3>你的持股量位於 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}</h3>
-                    </>
-                  ) : (
-                    <>
-                      <div className="summary-kicker">模型推估</div>
-                      <h3>你的持股量推估高於 <em>{Math.round(displayPercentile)}%</em> 的集保股東</h3>
-                    </>
-                  )}
-                  <PercentileRange
-                    value={analysis.result.estimatedPercentile}
-                    lower={analysis.result.lowerPercentile}
-                    upper={analysis.result.upperPercentile}
-                  />
-                  <p>
-                    {displayPercentile == null
-                      ? '此級距沒有精確上限，因此不顯示單點推估。'
-                      : 'PR 為持股級距內的模型估計，並非個別股東精確排名。'}
-                  </p>
-                </div>
+                <ResultHeadline result={analysis.result} />
                 <dl className="summary-stats">
                   <div><dt>持有張數</dt><dd>{formatNumber(analysis.lots, 3)} 張</dd></div>
                   <div><dt>換算股數</dt><dd>{formatNumber(analysis.result.userShares)} 股</dd></div>
@@ -289,6 +269,9 @@ function App() {
                 </dl>
               </div>
             </div>
+
+            <HoldingThresholds rows={analysis.data.rows} currentShares={analysis.result.userShares} />
+            <ShareResult key={`${analysis.data.stockCode}-${analysis.result.userShares}-${analysis.data.dataDate}`} data={analysis.data} result={analysis.result} />
 
             <section className="panel insight-panel" aria-labelledby="insight-title">
               <div className="section-heading">
@@ -300,13 +283,13 @@ function App() {
               </div>
               <ol>
                 <li><span className="insight-content">你目前位於 <strong>{analysis.result.bucket.label}</strong> 級距。</span></li>
-                <li><span className="insight-content">此級距共有 <strong>{formatNumber(analysis.result.row.holderCount)}</strong> 位集保股東，占全部股東 {formatPercent((analysis.result.row.holderCount / analysis.result.totalHolders) * 100)}%。</span></li>
+                <li><span className="insight-content">此級距共有 <strong>{formatNumber(analysis.result.row.holderCount)}</strong> 位集保股東，占全部股東 {formatHolderPercentage((analysis.result.row.holderCount / analysis.result.totalHolders) * 100)}。</span></li>
                 {displayPercentile == null ? (
-                  <li><span className="insight-content">最高級距沒有上限，只能確定合理範圍為 PR {Math.round(analysis.result.lowerPercentile)}～{Math.round(analysis.result.upperPercentile)}。</span></li>
+                  <li><span className="insight-content">最高級距沒有上限，只能確定合理範圍為 PR {formatPr(analysis.result.lowerPercentile)}～{formatPr(analysis.result.upperPercentile)}。</span></li>
                 ) : (
-                  <li><span className="insight-content">以級距內均勻分布模型推估，你的持股量約高於 <strong>{formatPercent(displayPercentile, 0)}%</strong> 的集保股東。</span></li>
+                  <li><span className="insight-content">以級距內均勻分布模型推估，你的持股量約高於 <strong>{formatPr(displayPercentile)}%</strong> 的集保股東。</span></li>
                 )}
-                <li><span className="insight-content">人數占比與持股占比是不同概念；圖表可切換查看兩種結構。</span></li>
+                <li><span className="insight-content">人數占比與持股占比是不同概念；雙向結構圖同時呈現兩者。</span></li>
               </ol>
             </section>
 

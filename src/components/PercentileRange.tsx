@@ -1,3 +1,5 @@
+import { formatPr } from '../lib/format'
+
 interface Props {
   value: number | null
   lower: number
@@ -14,9 +16,9 @@ export function PercentileRange({ value, lower, upper }: Props) {
   const visualWidth = Math.max(1.5, exactWidth)
   const visualCenter = (safeLower + safeUpper) / 2
   const visualStart = Math.min(100 - visualWidth, Math.max(0, visualCenter - visualWidth / 2))
-  const roundedLower = Math.round(safeLower)
-  const roundedUpper = Math.round(safeUpper)
-  const roundedValue = safeValue === null ? null : Math.round(safeValue)
+  const roundedLower = formatPr(safeLower)
+  const roundedUpper = formatPr(safeUpper)
+  const roundedValue = safeValue === null ? null : formatPr(safeValue)
   const accessibleLabel =
     roundedValue === null
       ? `PR 合理範圍為 ${roundedLower} 到 ${roundedUpper}，最高持股級距無上限，不顯示單點推估`

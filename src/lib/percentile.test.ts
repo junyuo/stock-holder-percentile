@@ -13,9 +13,11 @@ describe('lotsToShares', () => {
   it('支援小數張與零股換算', () => {
     expect(lotsToShares('0.5')).toBe(500)
     expect(lotsToShares('0.001')).toBe(1)
+    expect(lotsToShares('1.001')).toBe(1001)
+    expect(lotsToShares('8.001')).toBe(8001)
   })
 
-  it.each(['', '-1', 'NaN', 'Infinity', '0', '0.0005'])(
+  it.each(['', '-1', 'NaN', 'Infinity', '0', '0.0005', '1e-20'])(
     '拒絕不合法輸入 %s',
     (value) => expect(() => lotsToShares(value)).toThrow(PercentileError),
   )

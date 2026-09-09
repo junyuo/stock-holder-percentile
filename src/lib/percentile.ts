@@ -47,8 +47,10 @@ export function lotsToShares(value: string | number): number {
     throw new PercentileError('TOO_LARGE', `持有張數不可超過 ${MAX_LOTS.toLocaleString('zh-TW')} 張。`)
   }
 
-  const shares = lots * 1_000
-  if (!Number.isSafeInteger(shares)) {
+  const rawShares = lots * 1_000
+  const shares = Math.round(rawShares)
+  const multiplicationTolerance = Number.EPSILON * Math.max(1, Math.abs(rawShares))
+  if (!Number.isSafeInteger(shares) || shares <= 0 || Math.abs(rawShares - shares) > multiplicationTolerance) {
     throw new PercentileError('INVALID_INPUT', '換算後必須是整數股，最小輸入單位為 0.001 張。')
   }
   return shares

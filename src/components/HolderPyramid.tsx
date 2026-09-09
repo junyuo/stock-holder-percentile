@@ -1,16 +1,10 @@
-import { formatNumber, formatPercent } from '../lib/format'
+import { formatNumber, formatHolderPercentage } from '../lib/format'
 import { HOLDING_BUCKETS } from '../lib/percentile'
 import type { HoldingRow } from '../types'
 
 interface Props {
   rows: HoldingRow[]
   activeLevel: number
-}
-
-function formatHolderPercentage(value: number): string {
-  if (value === 0) return '0.0%'
-  if (value < 0.001) return '<0.001%'
-  return `${formatPercent(value, value < 0.1 ? 3 : 1)}%`
 }
 
 export function HolderPyramid({ rows, activeLevel }: Props) {
