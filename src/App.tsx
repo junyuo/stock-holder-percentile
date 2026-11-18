@@ -165,6 +165,8 @@ function App() {
   }
 
   const displayPercentile = analysis?.result.estimatedPercentile
+  const dataDate = analysis ? formatDataDate(analysis.data.dataDate) : ''
+  const dataUpdatedAt = analysis ? formatTaipeiTime(analysis.data.generatedAt) : ''
   const dataRows = analysis?.data.rows
     .filter((row) => row.holdingLevel >= 1 && row.holdingLevel <= 15)
     .sort((a, b) => a.holdingLevel - b.holdingLevel)
@@ -257,7 +259,10 @@ function App() {
                   <span className="stock-code">{analysis.data.stockCode}</span>
                   <h2>{analysis.data.stockName ?? '證券名稱未提供'}</h2>
                 </div>
-                <div className="data-date">資料日期 {formatDataDate(analysis.data.dataDate)}</div>
+                <div className="summary-dates">
+                  <span>集保統計日期 <time dateTime={dataDate.replaceAll('/', '-')}>{dataDate}</time></span>
+                  <span>資料最後更新 <time dateTime={analysis.data.generatedAt}>{dataUpdatedAt}</time><span className="summary-timezone">（台北時間）</span></span>
+                </div>
               </div>
               <div className="summary-primary">
                 <Suspense fallback={<div className="summary-gauge-loading">正在準備 PR 圖表…</div>}>
@@ -328,8 +333,8 @@ function App() {
                 </article>
               </div>
               <div className="freshness-row">
-                <span>本次資料日期：{formatDataDate(analysis.data.dataDate)}</span>
-                <span>資料產製時間：{formatTaipeiTime(analysis.data.generatedAt)}（Asia/Taipei）</span>
+                <span>本次資料日期：{dataDate}</span>
+                <span>資料產製時間：{dataUpdatedAt}（Asia/Taipei）</span>
                 <span>資料狀態：通過格式與級距驗證</span>
               </div>
             </section>
