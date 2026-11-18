@@ -33,7 +33,7 @@
 - GitHub Actions 自動更新資料與部署 GitHub Pages
 - 無後端、無資料庫、無前端密鑰
 
-前端第一次只載入 `manifest.json` 與 `stocks.json`；使用者查詢時才下載 `latest/{stockCode}.json`，不會載入歷史資料。
+前端先重新驗證 `manifest.json`，再以其中的 `sourceHash` 作為股票清單與個股檔的快取版本。使用者查詢時才下載 `latest/{stockCode}.json`，並核對資料日期、產製時間及 schema 版本。遇到版本不符、清單缺少代號或已列出的個股檔暫時找不到時，網站會重新取得索引並重試一次。
 
 ```text
 public/data/
@@ -109,7 +109,8 @@ npm run data:update
 - 使用 `/v1/opendata/1-1` 建立代號／名稱對照
 - 只有正規化後的來源內容雜湊改變時才重建資料
 - 只有 `public/data` 有差異時才 commit 與 push
-- 失敗時回傳非零狀態與正體中文錯誤，既有資料保持不變
+- 成功推送至 `main` 後，由獨立工作用內建 `GITHUB_TOKEN` 觸發「部署 GitHub Pages」
+- 資料驗證失敗時保留線上版本，並在 Actions 顯示錯誤。若資料已推送但部署觸發失敗，可在 Actions 手動執行「部署 GitHub Pages」，並確認線上 manifest 的 `sourceHash` 等於該次資料提交
 
 若預設分支有保護規則，需允許 GitHub Actions 建立資料更新 commit，或調整為由 bot 建立 PR。
 

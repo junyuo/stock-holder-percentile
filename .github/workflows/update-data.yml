@@ -6,8 +6,7 @@ on:
     - cron: '30 0 * * 6'
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: tdcc-data-update
@@ -15,8 +14,13 @@ concurrency:
 
 jobs:
   update:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: write
+    outputs:
+      pushed: ${{ steps.publish.outputs.pushed }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +38,9 @@ jobs:
           node scripts/validate-data.mjs
 
       - name: 僅在資料內容改變時提交
+        id: publish
         run: |
+          set -e
           if git diff --quiet -- public/data; then
             echo "TDCC 資料內容未改變，不建立提交。"
             exit 0
@@ -43,4 +49,22 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add public/data
           git commit -m "data: 更新 TDCC 集保資料"
-          git push
+          git push origin HEAD:refs/heads/main
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+
+  dispatch-pages:
+    needs: update
+    if: needs.update.result == 'success' && needs.update.outputs.pushed == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: 觸發 GitHub Pages 部署
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh workflow run deploy-pages.yml --repo "$GITHUB_REPOSITORY" --ref main; then
+            echo "::error::資料已推送，但無法觸發 Pages 部署。請從 Actions 手動執行「部署 GitHub Pages」。"
+            exit 1
+          fi
+          echo "已觸發「部署 GitHub Pages」，請查看該 workflow 的部署結果。"

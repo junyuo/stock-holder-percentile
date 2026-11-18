@@ -13,8 +13,9 @@ try {
   const stocks = JSON.parse(await readFile(path.join(DATA_DIR, 'stocks.json'), 'utf8'))
   assert(manifest.schemaVersion === '1.0.0', 'manifest schemaVersion 不符')
   assert(/^\d{8}$/.test(manifest.latestDataDate), 'manifest latestDataDate 格式錯誤')
-  assert(typeof manifest.generatedAt === 'string' && manifest.generatedAt.endsWith('+08:00'), 'generatedAt 必須使用 Asia/Taipei +08:00')
-  assert(Array.isArray(stocks) && stocks.length === manifest.stockCount, 'stocks 數量與 manifest 不一致')
+  assert(typeof manifest.generatedAt === 'string' && manifest.generatedAt.endsWith('+08:00') && Number.isFinite(Date.parse(manifest.generatedAt)), 'generatedAt 必須使用有效的 Asia/Taipei +08:00 時間')
+  assert(typeof manifest.sourceHash === 'string' && /^[a-f0-9]{64}$/.test(manifest.sourceHash), 'manifest sourceHash 格式錯誤')
+  assert(Array.isArray(stocks) && stocks.length > 0 && stocks.length === manifest.stockCount, 'stocks 數量與 manifest 不一致')
   assert(new Set(stocks.map((stock) => stock.stockCode)).size === stocks.length, 'stocks 出現重複代號')
 
   for (const stock of stocks) {
@@ -24,6 +25,8 @@ try {
     const data = JSON.parse(await readFile(file, 'utf8'))
     assert(data.stockCode === stock.stockCode, `${stock.stockCode} 個股檔代號不一致`)
     assert(data.dataDate === manifest.latestDataDate, `${stock.stockCode} 個股檔日期不一致`)
+    assert(data.generatedAt === manifest.generatedAt, `${stock.stockCode} 個股檔產製時間不一致`)
+    assert(data.schemaVersion === manifest.schemaVersion, `${stock.stockCode} 個股檔 schemaVersion 不一致`)
     assert(Array.isArray(data.rows) && data.rows.length === 15, `${stock.stockCode} 必須有 15 個分析級距`)
     assert(data.rows.every((row, index) => row.holdingLevel === index + 1), `${stock.stockCode} 級距順序錯誤`)
     assert(data.rows.every((row) => Number.isSafeInteger(row.holderCount) && row.holderCount >= 0), `${stock.stockCode} 股東人數錯誤`)

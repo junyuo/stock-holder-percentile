@@ -3,10 +3,10 @@ import { HolderPyramid } from './components/HolderPyramid'
 import { ResultHeadline } from './components/ResultHeadline'
 import { HoldingThresholds } from './components/HoldingThresholds'
 import { ShareResult } from './components/ShareResult'
-import { DataError, loadIndexData, loadStockData } from './lib/data'
+import { DataError, loadAnalysisData, loadIndexData, type DataIndex } from './lib/data'
 import { formatDataDate, formatNumber, formatPr, formatHolderPercentage, formatTaipeiTime } from './lib/format'
 import { calculatePercentile, lotsToShares, PercentileError } from './lib/percentile'
-import type { Manifest, PercentileResult, StockData, StockSummary } from './types'
+import type { PercentileResult, StockData, StockSummary } from './types'
 
 interface AnalysisState {
   data: StockData
@@ -15,6 +15,7 @@ interface AnalysisState {
 }
 
 const TDCC_SOURCE = 'https://openapi.tdcc.com.tw/swagger-ui/index.html?configUrl=%2Ftdcc-opendata-api-docs%2Fswagger-config'
+const EMPTY_STOCKS: StockSummary[] = []
 
 const PercentileGauge = lazy(() =>
   import('./components/PercentileGauge').then((module) => ({ default: module.PercentileGauge })),
@@ -40,7 +41,7 @@ function actionableMessage(error: unknown): { title: string; action: string } {
       NETWORK: '請檢查網路後重試；既有官方資料不會因下載失敗而被刪除。',
       NOT_FOUND: '請確認股票代號，或從股票名稱提示中選擇仍有本期資料的證券。',
       INVALID_JSON: '請重新整理頁面；若仍發生，請回報資料檔異常。',
-      DATE_MISMATCH: '為避免以不同日期混算，請等待下一次資料更新完成。',
+      DATE_MISMATCH: '你的股票代號和持有張數已保留，可稍後再按一次查詢。',
     }
     return { title: error.message, action: actions[error.code] }
   }
@@ -51,14 +52,16 @@ function App() {
   const initialQuery = useMemo(() => new URLSearchParams(window.location.search), [])
   const [stockCode, setStockCode] = useState(initialQuery.get('stock')?.trim().toUpperCase() ?? '')
   const [lots, setLots] = useState(initialQuery.get('lots')?.trim() ?? '')
-  const [manifest, setManifest] = useState<Manifest | null>(null)
-  const [stocks, setStocks] = useState<StockSummary[]>([])
+  const [index, setIndex] = useState<DataIndex | null>(null)
   const [analysis, setAnalysis] = useState<AnalysisState | null>(null)
   const [loading, setLoading] = useState(false)
   const [indexLoading, setIndexLoading] = useState(true)
   const [error, setError] = useState<{ title: string; action: string } | null>(null)
   const autoRan = useRef(false)
+  const initialIndexRequest = useRef<Promise<DataIndex> | null>(null)
+  const analysisInProgress = useRef(false)
 
+  const stocks = index?.stocks ?? EMPTY_STOCKS
   const stockMap = useMemo(
     () => new Map(stocks.map((stock) => [stock.stockCode, stock])),
     [stocks],
@@ -78,16 +81,27 @@ function App() {
   }, [normalizedCode, stocks])
 
   useEffect(() => {
-    loadIndexData()
-      .then(({ manifest: nextManifest, stocks: nextStocks }) => {
-        setManifest(nextManifest)
-        setStocks(nextStocks)
+    let active = true
+    initialIndexRequest.current ??= loadIndexData()
+    initialIndexRequest.current
+      .then((nextIndex) => {
+        if (active) setIndex(nextIndex)
       })
-      .catch((caught) => setError(actionableMessage(caught)))
-      .finally(() => setIndexLoading(false))
+      .catch((caught) => {
+        if (active) setError(actionableMessage(caught))
+      })
+      .finally(() => {
+        if (active) {
+          initialIndexRequest.current = null
+          setIndexLoading(false)
+        }
+      })
+    return () => { active = false }
   }, [])
 
   async function runAnalysis(code: string, lotsInput: string, updateUrl = true) {
+    if (analysisInProgress.current) return
+    autoRan.current = true
     setError(null)
     setAnalysis(null)
     const trimmedCode = code.trim().toUpperCase()
@@ -99,21 +113,14 @@ function App() {
       setError({ title: '請輸入持有張數。', action: '可輸入整數或小數，例如 50 或 0.5。' })
       return
     }
-    if (!manifest) {
-      setError({ title: '資料索引尚未載入完成。', action: '請稍候一秒再試一次。' })
-      return
-    }
-    if (!stockMap.has(trimmedCode)) {
-      setError({ title: `查無股票代號「${trimmedCode}」。`, action: '請確認代號，或從股票名稱提示中選擇。' })
-      return
-    }
-
+    analysisInProgress.current = true
     try {
       setLoading(true)
       const userShares = lotsToShares(lotsInput)
-      const data = await loadStockData(trimmedCode, manifest.latestDataDate)
+      const { index: nextIndex, data } = await loadAnalysisData(trimmedCode, index)
       const result = calculatePercentile(data.rows, userShares)
       const numericLots = userShares / 1_000
+      setIndex(nextIndex)
       setAnalysis({ data, result, lots: numericLots })
       setStockCode(trimmedCode)
       setLots(String(numericLots))
@@ -127,24 +134,24 @@ function App() {
     } catch (caught) {
       setError(actionableMessage(caught))
     } finally {
+      analysisInProgress.current = false
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (!manifest || !stocks.length || autoRan.current) return
+    if (indexLoading || !index || autoRan.current) return
     const queryStock = initialQuery.get('stock')
     const queryLots = initialQuery.get('lots')
     if (queryStock && queryLots) {
       const timeout = window.setTimeout(() => {
-        autoRan.current = true
-        void runAnalysis(queryStock, queryLots, false)
+        if (!autoRan.current) void runAnalysis(queryStock, queryLots, false)
       }, 0)
       return () => window.clearTimeout(timeout)
     }
   // runAnalysis is intentionally triggered once after index data is ready.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [manifest, stocks.length])
+  }, [index, indexLoading, initialQuery])
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -321,8 +328,8 @@ function App() {
                 </article>
               </div>
               <div className="freshness-row">
-                <span>最新資料：{formatDataDate(manifest?.latestDataDate ?? '')}</span>
-                <span>最近更新：{formatTaipeiTime(manifest?.generatedAt ?? '')}（Asia/Taipei）</span>
+                <span>本次資料日期：{formatDataDate(analysis.data.dataDate)}</span>
+                <span>資料產製時間：{formatTaipeiTime(analysis.data.generatedAt)}（Asia/Taipei）</span>
                 <span>資料狀態：通過格式與級距驗證</span>
               </div>
             </section>
